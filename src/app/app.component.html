@@ -79,70 +79,74 @@
   <!-- Pantalla de Ruleta -->
   <div *ngIf="pantallaActual === 'ruleta'" class="ruleta-screen">
     <div class="header">
-      <h1>🎯 ASIGNACIÓN DE EQUIPOS</h1>
-      <p>La ruleta decidirá tu equipo en esta batalla épica</p>
+      <h1>⚔️ BATALLA DE EQUIPOS ⚔️</h1>
+      <p>¡Cada equipo responderá {{ preguntasPorEquipo }} preguntas!</p>
+      <p>El equipo con más puntos al final será el ganador</p>
     </div>
     
-    <div class="ruleta-container">
-      <div class="ruleta" [class.girando]="ruletaGirando">
-        <div class="ruleta-inner">
-          <div class="sector paypal-sector">
-            <span>PayPal</span>
-            <span class="color-indicator azul"></span>
-          </div>
-          <div class="sector visa-sector">
-            <span>Visa Checkout</span>
-            <span class="color-indicator rojo"></span>
-          </div>
-        </div>
-        <div class="ruleta-pointer"></div>
+    <div class="equipos-preview">
+      <div class="equipo-card" [class]="'equipo-' + equipos[0].color">
+        <h3>{{ equipos[0].nombre }}</h3>
+        <div class="color-badge" [class]="equipos[0].color"></div>
+        <p>{{ preguntasPorEquipo }} preguntas</p>
       </div>
       
-      <button 
-        class="btn-ruleta" 
-        (click)="girarRuleta()" 
-        [disabled]="ruletaGirando">
-        {{ ruletaGirando ? 'Girando...' : '🎯 GIRAR RULETA' }}
-      </button>
+      <div class="vs">VS</div>
+      
+      <div class="equipo-card" [class]="'equipo-' + equipos[1].color">
+        <h3>{{ equipos[1].nombre }}</h3>
+        <div class="color-badge" [class]="equipos[1].color"></div>
+        <p>{{ preguntasPorEquipo }} preguntas</p>
+      </div>
     </div>
     
-    <div *ngIf="equipoAsignado" class="equipo-asignado">
-      <h2>¡Tu equipo es:</h2>
-      <div class="equipo-card" [class]="'equipo-' + equipoAsignado.color">
-        <h3>{{ equipoAsignado.nombre }}</h3>
-        <div class="color-badge" [class]="equipoAsignado.color"></div>
-      </div>
-      <button class="btn-primary" (click)="siguientePantalla()">
-        🚀 ¡COMENZAR TRIVIA!
-      </button>
-    </div>
+    <button class="btn-primary" (click)="girarRuleta()">
+      🚀 ¡COMENZAR BATALLA!
+    </button>
   </div>
 
   <!-- Pantalla de Trivia -->
   <div *ngIf="pantallaActual === 'trivia'" class="trivia-screen">
     <div class="trivia-header">
-      <div class="equipo-info">
-        <h3>Equipo: {{ equipoAsignado?.nombre }}</h3>
-        <div class="puntos">Puntos: {{ equipoAsignado?.puntos }}</div>
+      <div class="equipo-actual">
+        <h3>🎯 Turno de: {{ equipoActual?.nombre }}</h3>
+        <div class="puntos">Puntos: {{ equipoActual?.puntos }}</div>
+        <div class="preguntas-equipo">
+          Pregunta {{ (equipoActual?.preguntasRespondidas || 0) + 1 }} de {{ preguntasPorEquipo }}
+        </div>
       </div>
-      <div class="progreso">
-        Pregunta {{ preguntaActual + 1 }} de {{ preguntas.length }}
-        <div class="progress-bar">
-          <div class="progress-fill" [style.width.%]="((preguntaActual + 1) / preguntas.length) * 100"></div>
+      
+      <div class="progreso-general">
+        <div class="progreso-equipos">
+          <div class="equipo-progreso" [class]="'equipo-' + equipos[0].color">
+            <span>{{ equipos[0].nombre }}</span>
+            <div class="puntos-equipo">{{ equipos[0].puntos }} pts</div>
+            <div class="progreso-bar">
+              <div class="progreso-fill" [style.width.%]="(equipos[0].preguntasRespondidas / preguntasPorEquipo) * 100"></div>
+            </div>
+          </div>
+          
+          <div class="equipo-progreso" [class]="'equipo-' + equipos[1].color">
+            <span>{{ equipos[1].nombre }}</span>
+            <div class="puntos-equipo">{{ equipos[1].puntos }} pts</div>
+            <div class="progreso-bar">
+              <div class="progreso-fill" [style.width.%]="(equipos[1].preguntasRespondidas / preguntasPorEquipo) * 100"></div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
     
     <div class="pregunta-container">
-      <h2>{{ preguntas[preguntaActual].pregunta }}</h2>
+      <h2>{{ preguntasActuales[preguntaActual].pregunta }}</h2>
       
       <div class="opciones">
         <button 
-          *ngFor="let opcion of preguntas[preguntaActual].opciones; let i = index"
+          *ngFor="let opcion of preguntasActuales[preguntaActual].opciones; let i = index"
           class="opcion-btn"
           [class.selected]="respuestaSeleccionada === i"
-          [class.correct]="mostrarExplicacion && i === preguntas[preguntaActual].respuestaCorrecta"
-          [class.incorrect]="mostrarExplicacion && respuestaSeleccionada === i && i !== preguntas[preguntaActual].respuestaCorrecta"
+          [class.correct]="mostrarExplicacion && i === preguntasActuales[preguntaActual].respuestaCorrecta"
+          [class.incorrect]="mostrarExplicacion && respuestaSeleccionada === i && i !== preguntasActuales[preguntaActual].respuestaCorrecta"
           (click)="seleccionarRespuesta(i)"
           [disabled]="respuestaSeleccionada !== null">
           {{ opcion }}
@@ -151,15 +155,15 @@
       
       <div *ngIf="mostrarExplicacion" class="explicacion">
         <h4>💡 Explicación:</h4>
-        <p>{{ preguntas[preguntaActual].explicacion }}</p>
-        <div *ngIf="respuestaSeleccionada === preguntas[preguntaActual].respuestaCorrecta" class="correcto">
+        <p>{{ preguntasActuales[preguntaActual].explicacion }}</p>
+        <div *ngIf="respuestaSeleccionada === preguntasActuales[preguntaActual].respuestaCorrecta" class="correcto">
           ✅ ¡Correcto! +10 puntos
         </div>
-        <div *ngIf="respuestaSeleccionada !== preguntas[preguntaActual].respuestaCorrecta" class="incorrecto">
-          ❌ Incorrecto. La respuesta correcta era: {{ preguntas[preguntaActual].opciones[preguntas[preguntaActual].respuestaCorrecta] }}
+        <div *ngIf="respuestaSeleccionada !== preguntasActuales[preguntaActual].respuestaCorrecta" class="incorrecto">
+          ❌ Incorrecto. La respuesta correcta era: {{ preguntasActuales[preguntaActual].opciones[preguntasActuales[preguntaActual].respuestaCorrecta] }}
         </div>
         <button class="btn-primary" (click)="siguientePregunta()">
-          {{ preguntaActual < preguntas.length - 1 ? 'Siguiente Pregunta' : 'Ver Resultados' }}
+          {{ textoBotonSiguiente }}
         </button>
       </div>
     </div>
@@ -172,10 +176,20 @@
     </div>
     
     <div class="resultados-container">
-      <div class="equipo-resultado" *ngFor="let equipo of equipos">
-        <div class="equipo-card" [class]="'equipo-' + equipo.color">
+      <div class="equipo-resultado" *ngFor="let equipo of equipos; let i = index">
+        <div class="equipo-card" [class]="'equipo-' + equipo.color" [class.ganador]="equipoGanador === equipo">
           <h3>{{ equipo.nombre }}</h3>
           <div class="puntos-finales">{{ equipo.puntos }} puntos</div>
+          <div class="estadisticas">
+            <div class="stat">
+              <span class="stat-label">Preguntas Correctas:</span>
+              <span class="stat-value">{{ equipo.preguntasCorrectas }}/{{ equipo.preguntasRespondidas }}</span>
+            </div>
+            <div class="stat">
+              <span class="stat-label">Porcentaje:</span>
+              <span class="stat-value">{{ equipo.preguntasRespondidas > 0 ? ((equipo.preguntasCorrectas / equipo.preguntasRespondidas) * 100).toFixed(0) : 0 }}%</span>
+            </div>
+          </div>
           <div class="color-badge" [class]="equipo.color"></div>
         </div>
       </div>
@@ -184,11 +198,32 @@
     <div class="ganador" *ngIf="equipoGanador">
       <h2>🎉 ¡{{ equipoGanador.nombre }} GANA! 🎉</h2>
       <div class="trophy">🏆</div>
+      <p class="mensaje-ganador">
+        {{ equipoGanador.nombre }} obtuvo {{ equipoGanador.puntos }} puntos con {{ equipoGanador.preguntasCorrectas }} respuestas correctas
+      </p>
     </div>
     
     <div class="empate" *ngIf="!equipoGanador">
       <h2>🤝 ¡EMPATE! 🤝</h2>
-      <p>Ambos equipos demostraron gran conocimiento</p>
+      <p>Ambos equipos demostraron gran conocimiento con {{ equipos[0].puntos }} puntos cada uno</p>
+    </div>
+    
+    <div class="resumen-batalla">
+      <h3>📊 Resumen de la Batalla</h3>
+      <div class="resumen-stats">
+        <div class="resumen-stat">
+          <span>Total de Preguntas:</span>
+          <span>{{ equipos[0].preguntasRespondidas + equipos[1].preguntasRespondidas }}</span>
+        </div>
+        <div class="resumen-stat">
+          <span>Preguntas Correctas:</span>
+          <span>{{ equipos[0].preguntasCorrectas + equipos[1].preguntasCorrectas }}</span>
+        </div>
+        <div class="resumen-stat">
+          <span>Puntos Totales:</span>
+          <span>{{ equipos[0].puntos + equipos[1].puntos }}</span>
+        </div>
+      </div>
     </div>
     
     <button class="btn-primary" (click)="reiniciarJuego()">
@@ -336,10 +371,25 @@
     background: rgba(255, 255, 255, 0.95);
     border-radius: 20px;
     padding: 40px;
-    max-width: 600px;
+    max-width: 800px;
     width: 100%;
     box-shadow: 0 10px 30px rgba(0,0,0,0.3);
     text-align: center;
+  }
+
+  .equipos-preview {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 30px;
+    margin: 40px 0;
+  }
+
+  .vs {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #333;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
   }
 
   .ruleta-container {
@@ -503,9 +553,6 @@
   }
 
   .trivia-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
     margin-bottom: 30px;
     padding: 20px;
     background: linear-gradient(135deg, #667eea, #764ba2);
@@ -513,29 +560,65 @@
     border-radius: 15px;
   }
 
-  .equipo-info h3 {
-    margin-bottom: 5px;
+  .equipo-actual {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  .equipo-actual h3 {
+    margin-bottom: 10px;
+    font-size: 1.5rem;
   }
 
   .puntos {
+    font-size: 1.3rem;
+    font-weight: bold;
+    margin-bottom: 5px;
+  }
+
+  .preguntas-equipo {
+    font-size: 1rem;
+    opacity: 0.9;
+  }
+
+  .progreso-general {
+    margin-top: 20px;
+  }
+
+  .progreso-equipos {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  .equipo-progreso {
+    background: rgba(255,255,255,0.2);
+    padding: 15px;
+    border-radius: 10px;
+    text-align: center;
+  }
+
+  .equipo-progreso span {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 5px;
+  }
+
+  .puntos-equipo {
     font-size: 1.2rem;
     font-weight: bold;
+    margin-bottom: 10px;
   }
 
-  .progreso {
-    text-align: right;
-  }
-
-  .progress-bar {
-    width: 200px;
-    height: 10px;
+  .progreso-bar {
+    width: 100%;
+    height: 8px;
     background: rgba(255,255,255,0.3);
-    border-radius: 5px;
+    border-radius: 4px;
     overflow: hidden;
-    margin-top: 10px;
   }
 
-  .progress-fill {
+  .progreso-fill {
     height: 100%;
     background: white;
     transition: width 0.3s ease;
@@ -643,10 +726,73 @@
     to { opacity: 1; transform: translateX(0); }
   }
 
+  .equipo-card.ganador {
+    border: 3px solid #ffd700;
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+    transform: scale(1.05);
+  }
+
   .puntos-finales {
     font-size: 2rem;
     font-weight: bold;
     margin: 10px 0;
+  }
+
+  .estadisticas {
+    margin: 15px 0;
+    text-align: left;
+  }
+
+  .stat {
+    display: flex;
+    justify-content: space-between;
+    margin: 8px 0;
+    padding: 5px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+  }
+
+  .stat-label {
+    font-size: 0.9rem;
+    opacity: 0.9;
+  }
+
+  .stat-value {
+    font-weight: bold;
+    font-size: 1.1rem;
+  }
+
+  .mensaje-ganador {
+    margin-top: 15px;
+    font-size: 1.1rem;
+    opacity: 0.9;
+  }
+
+  .resumen-batalla {
+    background: rgba(255,255,255,0.1);
+    padding: 20px;
+    border-radius: 15px;
+    margin: 30px 0;
+  }
+
+  .resumen-batalla h3 {
+    text-align: center;
+    margin-bottom: 15px;
+    color: #333;
+  }
+
+  .resumen-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+  }
+
+  .resumen-stat {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 8px;
+    font-weight: bold;
   }
 
   .ganador {
@@ -688,12 +834,20 @@
       grid-template-columns: 1fr;
     }
     
-    .trivia-header {
+    .equipos-preview {
       flex-direction: column;
-      gap: 15px;
+      gap: 20px;
+    }
+    
+    .progreso-equipos {
+      grid-template-columns: 1fr;
     }
     
     .resultados-container {
+      grid-template-columns: 1fr;
+    }
+    
+    .resumen-stats {
       grid-template-columns: 1fr;
     }
     
